@@ -1,0 +1,34 @@
+spring:
+  application:
+    name: spring-security-assignment3
+
+  datasource:
+    url: jdbc:h2:mem:testdb
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  h2:
+    console:
+      enabled: true
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: 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
+            client-secret: Mo1078261932526-27qee91qho18dgh052jhod0ti4k6564v.apps.googleusercontent.com
+            scope:
+              - profile
+              - email
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+
+logging:
+  level:
+    org.springframework.security: DEBUG
