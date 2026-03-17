@@ -14,14 +14,14 @@ import java.util.Map;
 @Service
 public class SocialAppService implements OAuth2UserService<OAuth2UserRequest, OAuth2User> {
 
-    private final UserRepository userRepository;
+	private final UserRepository userRepository;
+
+    private static final Logger logger =
+            LoggerFactory.getLogger(SocialAppService.class);
 
     public SocialAppService(UserRepository userRepository) {
         this.userRepository = userRepository;
     }
-
-    private static final Logger logger =
-            LoggerFactory.getLogger(SocialAppService.class);
 
     @Override
     @Transactional
@@ -36,18 +36,21 @@ public class SocialAppService implements OAuth2UserService<OAuth2UserRequest, OA
 
         String email = (String) attributes.get("email");
         String name = (String) attributes.get("name");
+        String provider = (String) attributes.get("provider");
+
+        logger.info("User logged in: {}", email);
+
+        String role = email.equals("obul@gmail.com")
+                ? "ROLE_ADMIN"
+                : "ROLE_USER";
 
         User user = userRepository.findByEmail(email)
                 .orElseGet(() -> {
-
-                	User newUser = new User(null, name, email, "ROLE_USER", "GOOGLE");
+                    User newUser = new User(null, name, email, role, provider);
                     newUser.setEmail(email);
                     newUser.setName(name);
-                    newUser.setRole("ROLE_USER");
+                    newUser.setRole(role);
                     newUser.setProvider("GOOGLE");
-
-                    logger.info("Saving new OAuth user: {}", email);
-
                     return userRepository.save(newUser);
                 });
 

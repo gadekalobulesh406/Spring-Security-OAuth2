@@ -21,7 +21,7 @@ public class User {
 
     private String provider;
 
-    public User(Long id, String name, String email, String role, String provider) {
+    public User(Long id,String  name,String email, String role, String provider) {
         this.id = id;
         this.name = name;
         this.email = email;
