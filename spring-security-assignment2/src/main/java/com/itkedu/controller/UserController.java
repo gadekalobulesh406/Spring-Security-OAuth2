@@ -2,32 +2,40 @@ package com.itkedu.controller;
 
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.itkedu.model.User;
+import com.itkedu.repository.UserRepository;
+
+import lombok.RequiredArgsConstructor;
+
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/admin")
+@RequiredArgsConstructor
 public class UserController {
 
-	@GetMapping("/profile")
-	@PreAuthorize("hasRole('USER')")
-	public String userAccess() {
+    private  UserRepository userRepository;
+    
+    public UserController(UserRepository userReposiroty)
+    {
+    	this.userRepository = userReposiroty;
+    }
 
-		return "USER ACCESS";
-	}
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @PostMapping("/unlock/{username}")
+    public String unlockUser(@PathVariable String username) {
 
-	@GetMapping("/moderator")
-	@PreAuthorize("hasRole('MODERATOR')")
-	public String moderatorAccess() {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
-		return "MODERATOR ACCESS";
-	}
+        user.setAccountNonLocked(true);
+        user.setFailedAttempts(0);
 
-	@GetMapping("/admin")
-	@PreAuthorize("hasRole('SUPER_ADMIN')")
-	public String adminAccess() {
+        userRepository.save(user);
 
-		return "SUPER ADMIN ACCESS";
-	}
-
+        return "User unlocked successfully";
+    }
 }

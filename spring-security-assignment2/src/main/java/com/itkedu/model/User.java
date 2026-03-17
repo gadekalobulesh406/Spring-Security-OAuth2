@@ -27,7 +27,15 @@ public class User {
 
 	private boolean accountNonLocked = true;
 
-	private int failedAttempts;
+	private int failedAttempts=0;
+
+	public int getFailedAttempts() {
+		return failedAttempts;
+	}
+
+	public void setFailedAttempts(int failedAttempts) {
+		this.failedAttempts = failedAttempts;
+	}
 
 	public String getUsername() {
 		return username;

@@ -46,5 +46,15 @@ public class JWTUtils {
 
 		return extractClaims(token, Claims::getExpiration).before(new Date());
 	}
+	
+	public String generateRefreshToken(UserDetails userDetails) {
+
+	    return Jwts.builder()
+	            .setSubject(userDetails.getUsername())
+	            .setIssuedAt(new Date())
+	            .setExpiration(new Date(System.currentTimeMillis() + (7 * 24 * 60 * 60 * 1000)))
+	            .signWith(secretKey)
+	            .compact();
+	}
 
 }
