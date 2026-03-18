@@ -3,12 +3,12 @@ package com.itkedu.filters;
 import com.itkedu.service.UserDetailedService;
 import com.itkedu.utils.JWTUtils;
 
+import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.*;
 import jakarta.servlet.http.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.*;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -27,37 +27,48 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 	}
 
 	@Override
-	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+	protected void doFilterInternal(HttpServletRequest request,
+	                               HttpServletResponse response,
+	                               FilterChain filterChain)
+	        throws ServletException, IOException {
 
-			throws ServletException, IOException {
+	    String header = request.getHeader("Authorization");
 
-		String authHeader = request.getHeader("Authorization");
+	    try {
 
-		String token = null;
-		String username = null;
+	        if (header != null && header.startsWith("Bearer ")) {
 
-		if (authHeader != null && authHeader.startsWith("Bearer ")) {
+	            String token = header.substring(7);
+	            String username = jwtUtils.extractUsername(token);
 
-			token = authHeader.substring(7);
-			username = jwtUtils.extractUsername(token);
-		}
+	            if (username != null &&
+	                    SecurityContextHolder.getContext().getAuthentication() == null) {
 
-		if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+	                var userDetails = UserDetailedService.loadUserByUsername(username);
 
-			var userDetails = UserDetailedService.loadUserByUsername(username);
+	                if (jwtUtils.isTokenValid(token, userDetails)) {
 
-			if (jwtUtils.isTokenValid(token, userDetails)) {
+	                    var authToken = new UsernamePasswordAuthenticationToken(
+	                            userDetails, null, userDetails.getAuthorities());
 
-				UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(userDetails,
-						null, userDetails.getAuthorities());
+	                    SecurityContextHolder.getContext().setAuthentication(authToken);
+	                }
+	            }
+	        }
 
-				authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+	        filterChain.doFilter(request, response);
 
-				SecurityContextHolder.getContext().setAuthentication(authToken);
-			}
+	    } catch (ExpiredJwtException ex) {
 
-		}
+	        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+	        response.getWriter().write("JWT Token Expired");
+	        return;
 
-		filterChain.doFilter(request, response);
+	    } catch (Exception ex) {
+
+	        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+	        response.getWriter().write("Invalid JWT Token");
+	        return;
+	    }
 	}
 }

@@ -17,6 +17,8 @@ import com.itkedu.model.User;
 import com.itkedu.repository.UserRepository;
 import com.itkedu.service.UserDetailedService;
 import com.itkedu.utils.JWTUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import lombok.RequiredArgsConstructor;
 
@@ -25,6 +27,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class AuthController {
 
+	private static final Logger log = LoggerFactory.getLogger(AuthController.class);
     private final PasswordEncoder passwordEncoder;
 
 	private AuthenticationManager authenticationManager;
@@ -44,6 +47,8 @@ public class AuthController {
 
 	@PostMapping("/login")
     public AuthResponse login(@RequestBody LoginRequest request) {
+		
+		log.info("Login attempt for user: {}", request.getUsername());
 
         try {
             Authentication authentication = authenticationManager.authenticate(
@@ -58,6 +63,7 @@ public class AuthController {
             user.setFailedAttempts(0);
             user.setAccountNonLocked(true);
             userRepository.save(user);
+            log.info("Login SUCCESS for user: {}", request.getUsername());
 
             var userDetails = userService.loadUserByUsername(request.getUsername());
 
@@ -73,12 +79,14 @@ public class AuthController {
             if (user != null) {
                 int attempts = user.getFailedAttempts() + 1;
                 user.setFailedAttempts(attempts);
-
+                log.warn("Failed login attempt {} for user {}", attempts, request.getUsername());
                 if (attempts >= SecurityConstants.MAX_ATTEMPTS) {
                     user.setAccountNonLocked(false);
+                    log.error("Account LOCKED for user {}", request.getUsername());
                 }
 
                 userRepository.save(user);
+
             }
 
             throw new RuntimeException("Invalid username or password");
